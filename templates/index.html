@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WizWallet Prototype</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <header>
+        <h1>WizWallet Dashboard</h1>
+        <p>Status: <span style="color: #4caf50;">Online (Connected to PostgreSQL)</span></p>
+    </header>
+
+    <main>
+        <section class="balance-card">
+            <h2>Current Balance</h2>
+            <p class="amount">KES {{ "{:,.2f}".format(balance) }}</p>
+            <button type="button">Refresh Balance</button>
+        </section>
+
+        <section class="transaction-form">
+            <h3>Add Transaction</h3>
+            <form action="/add" method="POST">
+                <input type="text" name="description" placeholder="Description" required>
+                <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                <button type="submit" style="cursor: pointer; background-color: #4caf50;">Save to Database</button>
+            </form>
+        </section>
+
+        <section class="history">
+            <h3>Recent Transactions</h3>
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                </tr>
+                {% for row in transactions %}
+                <tr>
+                    <td>{{ row[0].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>KES {{ "{:,.2f}".format(row[2]) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </section>
+    </main>
+</body>
+
+</html>
