@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="top-bar">
+    <h1 class="page-title">Vault Savings</h1>
+</div>
+
+<div class="grid-2">
+    <div class="card" style="text-align: center; padding: 40px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🔒</div>
+        <div class="text-muted">Total Secured</div>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--success); margin: 10px 0;">
+            KES {{ "{:,.2f}".format(vault_balance) }}
+        </div>
+        <p class="text-muted">Funds in the vault are separated from your main checking balance.</p>
+    </div>
+
+    <div class="card">
+        <h3>Move Funds</h3>
+
+        <!-- Error Message -->
+        <div id="error-msg"
+            style="display: none; background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em;">
+            Transaction failed: Insufficient funds.
+        </div>
+        <script>
+            if (window.location.search.includes('error=insufficient_funds')) {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        </script>
+
+        <div class="grid-2" style="margin-top: 20px;">
+            <!-- Deposit -->
+            <div
+                style="background: rgba(16, 185, 129, 0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--success);">
+                <h4 class="text-success" style="margin-bottom: 15px;">Lock Money 🔒</h4>
+                <form action="/transfer" method="POST">
+                    <input type="hidden" name="direction" value="deposit">
+                    <input type="number" name="amount" placeholder="Amount (from Main)" step="0.01" required>
+                    <button type="submit" style="width: 100%; background: var(--success);">Deposit to Vault</button>
+                    <small class="text-muted" style="display: block; margin-top: 10px; text-align: center;">Deducts from
+                        Main Balance</small>
+                </form>
+            </div>
+
+            <!-- Withdraw -->
+            <div
+                style="background: rgba(239, 68, 68, 0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--danger);">
+                <h4 class="text-danger" style="margin-bottom: 15px;">Unlock Money 🔓</h4>
+                <form action="/transfer" method="POST">
+                    <input type="hidden" name="direction" value="withdraw">
+                    <input type="number" name="amount" placeholder="Amount (to Main)" step="0.01" required>
+                    <button type="submit" style="width: 100%; background: var(--danger);">Withdraw to Main</button>
+                    <small class="text-muted" style="display: block; margin-top: 10px; text-align: center;">Adds to Main
+                        Balance</small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

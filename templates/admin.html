@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="top-bar">
+    <h1 class="page-title">Admin Console</h1>
+</div>
+
+<div class="card">
+    <div class="flex-between" style="margin-bottom: 20px;">
+        <h3>Registered Users</h3>
+        <button class="btn-outline" onclick="document.getElementById('adminModal').style.display='block'">+ Create
+            Admin</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users_list %}
+            <tr>
+                <td>#{{ u[0] }}</td>
+                <td>{{ u[1] }}</td>
+                <td><span class="badge {{ 'badge-admin' if u[2] == 'admin' else '' }}">{{ u[2]|upper }}</span></td>
+                <td>
+                    <span class="badge {{ 'badge-success' if u[3] else 'badge-danger' }}">
+                        {{ 'ACTIVE' if u[3] else 'FROZEN' }}
+                    </span>
+                </td>
+                <td>
+                    {% if u[2] != 'admin' %}
+                    <form action="/admin/toggle_user/{{ u[0] }}" method="POST">
+                        <button type="submit" class="btn-outline"
+                            style="padding: 4px 10px; font-size: 0.8em; color: var(--danger); border-color: var(--danger);">
+                            {{ 'Freeze Account' if u[3] else 'Unfreeze' }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Admin Modal -->
+<div id="adminModal"
+    style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); padding-top: 100px;">
+    <div class="card" style="width: 400px; margin: 0 auto; position: relative;">
+        <span onclick="document.getElementById('adminModal').style.display='none'"
+            style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 1.5em;">&times;</span>
+        <h2>New Administrator</h2>
+        <form action="/create_admin" method="POST" style="margin-top: 20px;">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Create Admin</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

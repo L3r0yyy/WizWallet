@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WizWallet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            WizWallet
+        </div>
+
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="/dashboard" class="nav-link {{ 'active' if active_page == 'dashboard' }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="/transactions"
+                    class="nav-link {{ 'active' if active_page == 'transactions' }}">Transactions</a>
+            </li>
+            {% if session['role'] != 'admin' %}
+            <li class="nav-item">
+                <a href="/vault" class="nav-link {{ 'active' if active_page == 'vault' }}">Vault</a>
+            </li>
+            {% endif %}
+            {% if session['role'] == 'admin' %}
+            <li class="nav-item">
+                <a href="/admin" class="nav-link {{ 'active' if active_page == 'admin' }}">Admin Panel</a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="user-profile">
+            <div style="font-weight: 600; margin-bottom: 5px;">{{ session['username'] }}</div>
+            <div style="font-size: 0.8em; color: var(--text-muted); margin-bottom: 10px;">{{ session['role']|title }}
+            </div>
+            <a href="/logout" style="color: var(--danger); text-decoration: none; font-size: 0.9em;">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+
+</html>

@@ -8,45 +8,177 @@
 </head>
 
 <body>
-    <header>
-        <h1>WizWallet Dashboard</h1>
-        <p>Status: <span style="color: #4caf50;">Online (Connected to PostgreSQL)</span></p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>WizWallet Dashboard</h1>
+            <div class="badge badge-active" style="display: inline-block;">Status: Online (Connected to PostgreSQL)
+            </div>
+        </header>
 
-    <main>
-        <section class="balance-card">
-            <h2>Current Balance</h2>
-            <p class="amount">KES {{ "{:,.2f}".format(balance) }}</p>
-            <button type="button">Refresh Balance</button>
-        </section>
+        <main>
+            {% if 'user_id' not in session %}
+            <script>window.location.href = "/login";</script>
+            {% else %}
 
-        <section class="transaction-form">
-            <h3>Add Transaction</h3>
-            <form action="/add" method="POST">
-                <input type="text" name="description" placeholder="Description" required>
-                <input type="number" name="amount" placeholder="Amount" step="0.01" required>
-                <button type="submit" style="cursor: pointer; background-color: #4caf50;">Save to Database</button>
-            </form>
-        </section>
+            <div class="text-right" style="margin-bottom: 20px;">
+                <span class="text-muted" style="margin-right: 15px;">Logged in as: <strong class="text-main">{{
+                        session['username'] }}</strong> ({{ session['role'] }})</span>
+                <a href="/logout" class="text-danger">Logout</a>
+            </div>
 
-        <section class="history">
-            <h3>Recent Transactions</h3>
-            <table>
-                <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                </tr>
-                {% for row in transactions %}
-                <tr>
-                    <td>{{ row[0].strftime('%Y-%m-%d') }}</td>
-                    <td>{{ row[1] }}</td>
-                    <td>KES {{ "{:,.2f}".format(row[2]) }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </section>
-    </main>
+            {% if session['role'] == 'admin' %}
+            <div class="admin-panel border-gold">
+                <h2 class="text-gold">Admin Master Control</h2>
+                <p>Total Bank Liquidity: <span class="text-success" style="font-size: 1.5rem; font-weight: bold;">KES {{
+                        "{:,.2f}".format(balance) }}</span></p>
+
+                <hr style="border-color: var(--glass-border); margin: 20px 0;">
+
+                <h3>User Management</h3>
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    {% for u in users_list %}
+                    <tr>
+                        <td>{{ u[0] }}</td>
+                        <td>{{ u[1] }}</td>
+                        <td>{{ u[2] }}</td>
+                        <td><span class="badge {{ 'badge-active' if u[3] else 'badge-frozen' }}">{{ 'Active' if u[3]
+                                else 'Frozen' }}</span></td>
+                        <td>
+                            {% if u[2] != 'admin' %}
+                            <form action="/admin/toggle_user/{{ u[0] }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn-danger"
+                                    style="background: {{ 'var(--danger)' if u[3] else 'var(--primary)' }}">
+                                    {{ 'Freeze' if u[3] else 'Unfreeze' }}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+
+                <div class="mt-4">
+                    <h3>Create New Admin</h3>
+                    <form action="/create_admin" method="POST" class="flex">
+                        <input type="text" name="username" placeholder="New Admin Username" required
+                            class="border-gold">
+                        <input type="password" name="password" placeholder="Password" required class="border-gold">
+                        <button type="submit" class="btn-admin">Create Admin</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="user-panel">
+                <h2>Welcome back, {{ session['username'] }}</h2>
+                <div class="grid-2">
+                    <section class="card">
+                        <h3>Checking Balance</h3>
+                        <p class="text-success" style="font-size: 1.5rem; font-weight: 700;">KES {{
+                            "{:,.2f}".format(balance) }}</p>
+                    </section>
+                    <section class="card" style="border-color: var(--secondary);">
+                        <h3 style="color: var(--secondary);">Vault Savings</h3>
+                        <p style="color: var(--secondary); font-size: 1.5rem; font-weight: 700;">KES {{
+                            "{:,.2f}".format(vault_balance) }}</p>
+                    </section>
+                </div>
+
+                <div class="grid-2 mt-4">
+                    <div class="card"
+                        style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="text-muted">Highest Expense</span>
+                        <span class="text-danger" style="font-size: 1.2rem; font-weight: 600;">KES {{
+                            "{:,.2f}".format(stats.highest_expense) }}</span>
+                    </div>
+                    <div class="card"
+                        style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <span class="text-muted">Spent This Month</span>
+                        <span class="text-danger" style="font-size: 1.2rem; font-weight: 600;">KES {{
+                            "{:,.2f}".format(stats.spent_month) }}</span>
+                    </div>
+                </div>
+
+                <section class="card mt-4">
+                    <h3>New Transaction</h3>
+                    <form action="/add" method="POST">
+                        <div class="grid-2" style="gap: 10px; margin-bottom: 10px;">
+                            <input type="text" name="description" placeholder="Description" required>
+                            <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                        </div>
+                        <div class="grid-2" style="gap: 10px; margin-bottom: 10px;">
+                            <select name="transaction_type">
+                                <option value="credit">Income/Deposit</option>
+                                <option value="debit">Expense/Withdrawal</option>
+                            </select>
+                            <select name="category">
+                                <option value="main">Main Account</option>
+                                <option value="vault">Vault</option>
+                            </select>
+                        </div>
+                        <button type="submit">Process Transaction</button>
+                    </form>
+                </section>
+            </div>
+            {% endif %}
+
+            <section class="card mt-4">
+                <h3>{{ 'System Logs' if session['role'] == 'admin' else 'Recent Transactions' }}</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Value</th>
+                                <th>Type</th>
+                                {% if session['role'] == 'admin' %}
+                                <th>Category</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in transactions %}
+                            <tr>
+                                <td>{{ row[1].strftime('%Y-%m-%d') }}</td>
+                                <td>{{ row[2] }}</td>
+
+                                {% if session['role'] == 'admin' %}
+                                <!-- Admin View -->
+                                <td class="{{ row[5] == 'credit' and 'text-success' or 'text-danger' }}">KES {{
+                                    "{:,.2f}".format(row[3]) }}</td>
+                                <td><span class="badge">{{ row[5]|upper }}</span></td>
+                                <td>{{ row[6] }}</td>
+                                <td>{{ row[4] }}</td>
+                                <td>
+                                    <form action="/admin/delete_transaction/{{ row[0] }}" method="POST">
+                                        <button type="submit" class="btn-danger" style="padding: 4px 8px;">X</button>
+                                    </form>
+                                </td>
+                                {% else %}
+                                <!-- User View -->
+                                <td class="{{ row[4] == 'credit' and 'text-success' or 'text-danger' }}">KES {{
+                                    "{:,.2f}".format(row[3]) }}</td>
+                                <td><span class="badge">{{ row[4]|upper }}</span></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            {% endif %}
+        </main>
+    </div>
 </body>
 
 </html>

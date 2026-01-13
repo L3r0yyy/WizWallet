@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="top-bar">
+    <h1 class="page-title">
+        {% if admin_mode %} System Overview {% else %} Dashboard {% endif %}
+    </h1>
+    <div>
+        <span class="text-muted">{{ now }}</span>
+    </div>
+</div>
+
+{% if admin_mode %}
+<!-- Admin Dashboard -->
+<div class="grid-3">
+    <div class="card stat-card">
+        <div class="text-muted">Total Users</div>
+        <div style="font-size: 2rem; font-weight: 700;">{{ stats.total_users }}</div>
+    </div>
+    <div class="card stat-card" style="border-left-color: var(--success);">
+        <div class="text-muted">System Liquidity</div>
+        <div style="font-size: 2rem; font-weight: 700;">KES {{ "{:,.2f}".format(stats.total_liquidity) }}</div>
+    </div>
+    <div class="card stat-card" style="border-left-color: var(--warning);">
+        <div class="text-muted">Total Transactions</div>
+        <div style="font-size: 2rem; font-weight: 700;">{{ stats.total_transactions }}</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>System Flow</h3>
+        <div style="position: relative; height: 300px; max-height: 300px; width: 100%; overflow: hidden;">
+            <canvas id="adminFlowChart"
+                style="display: block; box-sizing: border-box; height: 300px; width: 100%;"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Activity Trend (7 Days)</h3>
+        <div style="position: relative; height: 300px; max-height: 300px; width: 100%; overflow: hidden;">
+            <canvas id="adminTrendChart"
+                style="display: block; box-sizing: border-box; height: 300px; width: 100%;"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>System Status</h3>
+    <p class="text-muted">All systems operational. View <a href="/transactions" style="color: var(--primary);">System
+            Logs</a> for details.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Flow Chart (Money In vs Out)
+    new Chart(document.getElementById('adminFlowChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Total Credits (In)', 'Total Debits (Out)'],
+            datasets: [{
+                data: [{{ stats.total_credits }}, {{ stats.total_debits }}],
+        backgroundColor: ['#10b981', '#ef4444'],
+        hoverOffset: 4
+    }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Trend Chart (Bar)
+    new Chart(document.getElementById('adminTrendChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ stats.trend_dates | tojson }},
+        datasets: [{
+            label: 'Transactions',
+            data: {{ stats.trend_counts | tojson }},
+        backgroundColor: '#3b82f6',
+        borderRadius: 4
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+    });
+</script>
+
+{% else %}
+<!-- User Dashboard (Existing Code) -->
+<div class="grid-3">
+    <div class="card stat-card">
+        <div class="text-muted">Current Balance</div>
+        <div style="font-size: 2rem; font-weight: 700;">KES {{ "{:,.2f}".format(balance) }}</div>
+    </div>
+    <div class="card stat-card" style="border-left-color: var(--success);">
+        <div class="text-muted">Vault Savings</div>
+        <div style="font-size: 2rem; font-weight: 700;">KES {{ "{:,.2f}".format(vault_balance) }}</div>
+    </div>
+    <div class="card stat-card" style="border-left-color: var(--danger);">
+        <div class="text-muted">Spent this Month</div>
+        <div style="font-size: 2rem; font-weight: 700;">KES {{ "{:,.2f}".format(stats.spent_month) }}</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Chart -->
+    <div class="card">
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card">
+        <h3>Recent Activity</h3>
+        <ul style="list-style: none; margin-top: 15px;">
+            {% for txn in recent_transactions %}
+            <li class="flex-between" style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <div>
+                    <div style="font-weight: 600;">{{ txn[2] }}</div>
+                    <div style="font-size: 0.8em; color: var(--text-muted);">{{ txn[1].strftime('%d %b') }}</div>
+                </div>
+                <div class="{{ 'text-success' if txn[4] == 'credit' else 'text-danger' }}" style="font-weight: 600;">
+                    {{ '+' if txn[4] == 'credit' else '-' }}KES {{ "{:,.2f}".format(txn[3]) }}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="/transactions"
+            style="display: block; margin-top: 15px; text-decoration: none; color: var(--primary); font-weight: 600;">View
+            All &rarr;</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('financeChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Expenses (Month)', 'Savings (Vault)', 'Current Balance'],
+            datasets: [{
+                label: 'Financial Distribution',
+                data: [{{ stats.spent_month }}, {{ vault_balance }}, {{ balance }}],
+    backgroundColor: [
+        '#ef4444', // Red
+        '#10b981', // Emerald
+        '#3b82f6'  // Blue
+    ],
+        hoverOffset: 4
+            }]
+        },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                plugins: {
+            legend: {
+                position: 'bottom',
+                }
+        }
+    }
+    });
+</script>
+{% endif %}
+{% endblock %}

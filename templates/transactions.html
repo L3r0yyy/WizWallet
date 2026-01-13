@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="top-bar">
+    <h1 class="page-title">Transactions</h1>
+    <button onclick="document.getElementById('addModal').style.display='block'">+ New Transaction</button>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                {% if session['role'] == 'admin' %}
+                <th>User</th>
+                {% endif %}
+                <th>Category</th>
+                <th>Type</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in transactions %}
+            <tr>
+                <td>{{ row[1].strftime('%Y-%m-%d') }}</td>
+                <td>{{ row[2] }}</td>
+                {% if session['role'] == 'admin' %}
+                <td style="font-size: 0.9em; color: var(--text-muted);">{{ row[6] }}</td>
+                {% endif %}
+                <td><span class="badge" style="background: #f3f4f6;">{{ row[5]|title }}</span></td>
+                <td>
+                    <span class="badge {{ 'badge-success' if row[4] == 'credit' else 'badge-danger' }}">
+                        {{ row[4]|upper }}
+                    </span>
+                </td>
+                <td style="font-weight: 600;">KES {{ "{:,.2f}".format(row[3]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Simple inline modal for adding transaction -->
+<div id="addModal"
+    style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); padding-top: 100px;">
+    <div class="card" style="width: 400px; margin: 0 auto; position: relative;">
+        <span onclick="document.getElementById('addModal').style.display='none'"
+            style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 1.5em;">&times;</span>
+        <h2>Add Transaction</h2>
+        <form action="/add" method="POST" style="margin-top: 20px;">
+            <input type="text" name="description" placeholder="Description (e.g. Groceries)" required>
+            <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+
+            <label style="display: block; font-size: 0.9em; margin-bottom: 5px; color: var(--text-muted);">Type</label>
+            <select name="transaction_type">
+                <option value="debit">Expense (Debit)</option>
+                <option value="credit">Income (Credit)</option>
+            </select>
+
+            <!-- Hidden Category: Always Main -->
+            <input type="hidden" name="category" value="main">
+
+            <button type="submit" style="width: 100%;">Save Transaction</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
